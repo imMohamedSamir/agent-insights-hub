@@ -136,7 +136,7 @@ function UploadPage() {
             <p className="mt-1 text-sm text-muted-foreground">
               or click to browse — supports .xlsx, .xls, .csv (multiple files allowed)
             </p>
-          </motion.div>
+          </div>
 
           <div className="mt-6">
             <div className="flex items-center justify-between mb-3">
