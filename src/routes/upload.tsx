@@ -114,15 +114,14 @@ function UploadPage() {
     <AppShell title="DATA UPLOAD">
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6">
         <div>
-          <motion.div
-            {...(getRootProps() as React.HTMLAttributes<HTMLDivElement>)}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`relative rounded-2xl border-2 border-dashed p-10 md:p-14 text-center cursor-pointer transition-colors bg-card shadow-card ${
-              isDragActive
-                ? "border-primary bg-primary-soft/40"
-                : "border-border hover:border-primary/50"
-            }`}
+          <div
+            {...getRootProps({
+              className: `relative rounded-2xl border-2 border-dashed p-10 md:p-14 text-center cursor-pointer transition-colors bg-card shadow-card animate-fade-in ${
+                isDragActive
+                  ? "border-primary bg-primary-soft/40"
+                  : "border-border hover:border-primary/50"
+              }`,
+            })}
           >
             <input {...getInputProps()} />
             <motion.div
