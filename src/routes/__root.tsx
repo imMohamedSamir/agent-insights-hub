@@ -1,4 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Toaster } from "sonner";
+import { DashboardProvider } from "@/state/dashboard-context";
 
 import appCss from "../styles.css?url";
 
@@ -74,5 +76,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <DashboardProvider>
+      <Outlet />
+      <Toaster richColors position="top-right" />
+    </DashboardProvider>
+  );
 }
