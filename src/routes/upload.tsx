@@ -99,7 +99,7 @@ function UploadPage() {
         queue.map(async (q) => ({ name: q.file.name, base64: await fileToBase64(q.file) }))
       );
       const result = await processDashboard({ data: { files } });
-      setData(result);
+      setDataset(result);
       toast.success(`Processed ${result.rowsProcessed} rows from ${result.filesProcessed} file(s).`);
       navigate({ to: "/" });
     } catch (err) {
