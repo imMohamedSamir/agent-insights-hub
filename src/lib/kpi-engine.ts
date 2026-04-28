@@ -1,10 +1,12 @@
 import * as XLSX from "xlsx";
 import type {
   AgentInsight,
+  AgentRecord,
   AgentSummary,
   DashboardData,
   KpiMetric,
   KpiStatus,
+  ProcessedDataset,
   TrendPoint,
 } from "./kpi-types";
 
