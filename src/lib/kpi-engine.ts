@@ -57,6 +57,7 @@ const COLUMN_ALIASES: Record<string, string[]> = {
 
 interface NormalizedRow {
   agent: string;
+  employeeId: string;
   date: string; // ISO YYYY-MM-DD
   calls: number;
   handleTime: number; // seconds
