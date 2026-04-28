@@ -25,7 +25,7 @@ function base64ToArrayBuffer(b64: string): ArrayBuffer {
 export const processDashboard = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data }): Promise<ProcessedDataset> => {
-    const allRows: Record<string, unknown>[] = [];
+    const allRows: unknown[][] = [];
     for (const f of data.files) {
       try {
         const buf = base64ToArrayBuffer(f.base64);
