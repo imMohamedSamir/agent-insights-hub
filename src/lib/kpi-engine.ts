@@ -25,7 +25,17 @@ import type {
  * - Tickets         (number)        closed tickets
  */
 const COLUMN_ALIASES: Record<string, string[]> = {
-  agent: ["agent", "agent name", "name", "employee", "user"],
+  agent: ["agent", "agent name", "name", "employee", "user", "employee name", "full name"],
+  employeeId: [
+    "employeeid",
+    "employee id",
+    "emp id",
+    "empid",
+    "id",
+    "agent id",
+    "user id",
+    "staff id",
+  ],
   date: ["date", "day", "shift date"],
   calls: ["calls", "total calls", "call volume", "callsHandled".toLowerCase()],
   handleTime: [
