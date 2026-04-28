@@ -50,7 +50,7 @@ const SCHEMA_COLUMNS = [
 function UploadPage() {
   const [queue, setQueue] = useState<QueuedFile[]>([]);
   const [processing, setProcessing] = useState(false);
-  const { setData } = useDashboard();
+  const { setDataset } = useDashboard();
   const navigate = useNavigate();
 
   const onDrop = useCallback((accepted: File[]) => {
