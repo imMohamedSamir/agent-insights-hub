@@ -2,6 +2,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { LayoutDashboard, Upload, Bell, RefreshCw, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
+import { SearchBar } from "@/components/dashboard/SearchBar";
 
 interface AppShellProps {
   title: string;
