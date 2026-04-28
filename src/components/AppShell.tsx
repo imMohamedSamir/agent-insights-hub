@@ -67,14 +67,19 @@ export function AppShell({
       {/* Main */}
       <div className="flex-1 min-w-0 flex flex-col">
         <header className="flex items-center justify-between gap-4 px-6 md:px-10 pt-6 pb-2">
-          <div className="flex items-center gap-4">
-            <h2 className="text-lg md:text-xl font-extrabold tracking-[0.18em] text-foreground">
+          <div className="flex items-center gap-4 min-w-0">
+            <h2 className="text-lg md:text-xl font-extrabold tracking-[0.18em] text-foreground whitespace-nowrap">
               {title}
             </h2>
             <div className="hidden sm:flex items-center gap-2 rounded-full bg-card border border-border px-3 py-1.5 text-xs text-muted-foreground shadow-card">
               <CalendarDays className="h-3.5 w-3.5" />
               {formattedDate}
             </div>
+            {location.pathname === "/" && (
+              <div className="hidden md:block flex-1 min-w-0 max-w-md ml-2">
+                <SearchBar />
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <button
