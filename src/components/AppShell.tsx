@@ -119,6 +119,11 @@ export function AppShell({
             </div>
           </div>
         </header>
+        {location.pathname === "/" && (
+          <div className="md:hidden px-6 pt-3">
+            <SearchBar />
+          </div>
+        )}
         <main className="flex-1 px-6 md:px-10 pb-12">{children}</main>
       </div>
     </div>
