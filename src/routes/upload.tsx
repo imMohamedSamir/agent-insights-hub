@@ -50,7 +50,7 @@ const SCHEMA_COLUMNS = [
 function UploadPage() {
   const [queue, setQueue] = useState<QueuedFile[]>([]);
   const [processing, setProcessing] = useState(false);
-  const { setData } = useDashboard();
+  const { setDataset } = useDashboard();
   const navigate = useNavigate();
 
   const onDrop = useCallback((accepted: File[]) => {
@@ -99,7 +99,7 @@ function UploadPage() {
         queue.map(async (q) => ({ name: q.file.name, base64: await fileToBase64(q.file) }))
       );
       const result = await processDashboard({ data: { files } });
-      setData(result);
+      setDataset(result);
       toast.success(`Processed ${result.rowsProcessed} rows from ${result.filesProcessed} file(s).`);
       navigate({ to: "/" });
     } catch (err) {

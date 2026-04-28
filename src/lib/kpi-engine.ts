@@ -1,10 +1,12 @@
 import * as XLSX from "xlsx";
 import type {
   AgentInsight,
+  AgentRecord,
   AgentSummary,
   DashboardData,
   KpiMetric,
   KpiStatus,
+  ProcessedDataset,
   TrendPoint,
 } from "./kpi-types";
 
@@ -23,7 +25,17 @@ import type {
  * - Tickets         (number)        closed tickets
  */
 const COLUMN_ALIASES: Record<string, string[]> = {
-  agent: ["agent", "agent name", "name", "employee", "user"],
+  agent: ["agent", "agent name", "name", "employee", "user", "employee name", "full name"],
+  employeeId: [
+    "employeeid",
+    "employee id",
+    "emp id",
+    "empid",
+    "id",
+    "agent id",
+    "user id",
+    "staff id",
+  ],
   date: ["date", "day", "shift date"],
   calls: ["calls", "total calls", "call volume", "callsHandled".toLowerCase()],
   handleTime: [
@@ -45,6 +57,7 @@ const COLUMN_ALIASES: Record<string, string[]> = {
 
 interface NormalizedRow {
   agent: string;
+  employeeId: string;
   date: string; // ISO YYYY-MM-DD
   calls: number;
   handleTime: number; // seconds
@@ -105,10 +118,17 @@ function parseDate(v: unknown): string {
 function normalizeRow(raw: Record<string, unknown>): NormalizedRow | null {
   const agentCol = findColumn(raw, COLUMN_ALIASES.agent);
   const dateCol = findColumn(raw, COLUMN_ALIASES.date);
-  if (!agentCol && !dateCol) return null;
+  const idCol = findColumn(raw, COLUMN_ALIASES.employeeId);
+  if (!agentCol && !dateCol && !idCol) return null;
+
+  const agent = agentCol ? String(raw[agentCol] ?? "").trim() || "Unknown" : "Unknown";
+  const employeeId = idCol
+    ? String(raw[idCol] ?? "").trim()
+    : "";
 
   return {
-    agent: agentCol ? String(raw[agentCol] ?? "").trim() || "Unknown" : "Unknown",
+    agent,
+    employeeId: employeeId || `AG-${agent.replace(/\s+/g, "").slice(0, 8).toUpperCase()}`,
     date: dateCol ? parseDate(raw[dateCol]) : new Date().toISOString().slice(0, 10),
     calls: num(raw[findColumn(raw, COLUMN_ALIASES.calls) ?? ""]),
     handleTime: num(raw[findColumn(raw, COLUMN_ALIASES.handleTime) ?? ""]),
@@ -361,9 +381,12 @@ export function computeDashboard(
   });
 
   // Agent summary
-  const agents = Array.from(new Set(rows.map((r) => r.agent)));
+  const agentNames = Array.from(new Set(rows.map((r) => r.agent)));
+  const employeeIds = Array.from(new Set(rows.map((r) => r.employeeId)));
+  const isAggregate = agentNames.length > 1;
   const summary: AgentSummary = {
-    name: agents[0] ?? "Aley Rivera",
+    name: isAggregate ? `All Agents (${agentNames.length})` : (agentNames[0] ?? "Aley Rivera"),
+    employeeId: isAggregate ? "ALL" : (employeeIds[0] ?? "—"),
     role: "TIER 2 SUPPORT",
     date: latest.date,
     overallScore: overall,
@@ -388,28 +411,102 @@ export function computeDashboard(
   };
 }
 
-export function buildSampleDashboard(): DashboardData {
-  // Build a synthetic 7-day dataset matching the mockup
-  const today = new Date();
-  const rows: Record<string, unknown>[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    const dateIso = d.toISOString().slice(0, 10);
-    const calls = 38 + Math.round(Math.sin(i) * 6) + 7;
-    rows.push({
-      Agent: "Aley Rivera",
-      Date: dateIso,
-      Calls: calls,
-      HandleTime: 200 * calls + i * 120, // total seconds across calls
-      FCR: 86 + (i % 3),
-      QAScore: 91 + (i % 3),
-      AdherenceMin: 380 + i * 4,
-      ScheduledMin: 420,
-      TNPS: 90 + (i % 4),
-      Rejected: Math.max(0, 4 - (i % 3)),
-      Tickets: 10 + (i % 4),
+/**
+ * Process raw rows into a full dataset: aggregate dashboard + per-agent dashboards
+ * + a flat list of agents (for searching).
+ */
+export function processWorkbookRows(
+  rawRows: Record<string, unknown>[],
+  filesProcessed: number
+): ProcessedDataset {
+  const rows = rawRows.map(normalizeRow).filter((r): r is NormalizedRow => r !== null);
+  if (rows.length === 0) {
+    throw new Error(
+      "No usable rows found. Expected columns: Agent, EmployeeId, Date, Calls, HandleTime, FCR, QAScore, AdherenceMin, ScheduledMin, TNPS, Rejected, Tickets."
+    );
+  }
+
+  const aggregate = computeDashboard(rawRows, filesProcessed);
+
+  // Group raw rows back by employeeId so per-agent dashboards reuse the same logic.
+  const groups = new Map<string, { name: string; rows: Record<string, unknown>[] }>();
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    const raw = rawRows[i];
+    const g = groups.get(r.employeeId) ?? { name: r.agent, rows: [] };
+    g.rows.push(raw);
+    groups.set(r.employeeId, g);
+  }
+
+  const byAgent: Record<string, DashboardData> = {};
+  const agents: AgentRecord[] = [];
+  for (const [employeeId, g] of groups) {
+    const dash = computeDashboard(g.rows, filesProcessed);
+    // Force the per-agent summary identity (computeDashboard infers from rows;
+    // safe to override with the canonical id/name we grouped by).
+    dash.summary.employeeId = employeeId;
+    dash.summary.name = g.name;
+    byAgent[employeeId] = dash;
+    agents.push({
+      employeeId,
+      name: g.name,
+      role: dash.summary.role,
+      overallScore: dash.summary.overallScore,
+      overallStatus: dash.summary.overallStatus,
     });
   }
-  return computeDashboard(rows, 1);
+
+  agents.sort((a, b) => a.name.localeCompare(b.name));
+
+  return {
+    aggregate,
+    byAgent,
+    agents,
+    rowsProcessed: rows.length,
+    filesProcessed,
+  };
+}
+
+const SAMPLE_AGENTS: { name: string; id: string; bias: number }[] = [
+  { name: "Aley Rivera", id: "EMP-1042", bias: 0 },
+  { name: "Mohamed Hassan", id: "EMP-2087", bias: -3 },
+  { name: "Sara Al-Farsi", id: "EMP-3151", bias: 2 },
+  { name: "James O'Connor", id: "EMP-4220", bias: -6 },
+  { name: "Linh Tran", id: "EMP-5309", bias: 4 },
+];
+
+function buildSampleRows(): Record<string, unknown>[] {
+  const today = new Date();
+  const rows: Record<string, unknown>[] = [];
+  for (const agent of SAMPLE_AGENTS) {
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dateIso = d.toISOString().slice(0, 10);
+      const calls = 38 + Math.round(Math.sin(i + agent.bias) * 6) + 7;
+      rows.push({
+        "Employee ID": agent.id,
+        Agent: agent.name,
+        Date: dateIso,
+        Calls: calls,
+        HandleTime: (200 + agent.bias * 2) * calls + i * 120,
+        FCR: Math.max(60, 86 + agent.bias + (i % 3)),
+        QAScore: Math.max(60, 91 + agent.bias + (i % 3)),
+        AdherenceMin: 380 + i * 4 + agent.bias,
+        ScheduledMin: 420,
+        TNPS: Math.max(60, 90 + agent.bias + (i % 4)),
+        Rejected: Math.max(0, 4 - (i % 3) + Math.max(0, -agent.bias)),
+        Tickets: 10 + (i % 4),
+      });
+    }
+  }
+  return rows;
+}
+
+export function buildSampleDashboard(): DashboardData {
+  return computeDashboard(buildSampleRows(), 1);
+}
+
+export function buildSampleDataset(): ProcessedDataset {
+  return processWorkbookRows(buildSampleRows(), 1);
 }

@@ -28,6 +28,7 @@ export interface AgentInsight {
 
 export interface AgentSummary {
   name: string;
+  employeeId: string;
   role: string;
   date: string;
   overallScore: number;
@@ -47,6 +48,27 @@ export interface DashboardData {
   experience: KpiMetric[];
   trend: TrendPoint[];
   insights: AgentInsight[];
+  rowsProcessed: number;
+  filesProcessed: number;
+}
+
+/** Lightweight agent record used for searching / listing. */
+export interface AgentRecord {
+  employeeId: string;
+  name: string;
+  role: string;
+  overallScore: number;
+  overallStatus: KpiStatus;
+}
+
+/** Full processed result containing every agent + an aggregate "All Agents" view. */
+export interface ProcessedDataset {
+  /** Aggregate dashboard across every agent (used when no search / no selection). */
+  aggregate: DashboardData;
+  /** Per-agent dashboards keyed by employeeId. */
+  byAgent: Record<string, DashboardData>;
+  /** Flat list for search / suggestions. */
+  agents: AgentRecord[];
   rowsProcessed: number;
   filesProcessed: number;
 }
