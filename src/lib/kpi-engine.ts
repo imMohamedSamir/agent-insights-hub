@@ -467,28 +467,46 @@ export function processWorkbookRows(
   };
 }
 
-export function buildSampleDashboard(): DashboardData {
-  // Build a synthetic 7-day dataset matching the mockup
+const SAMPLE_AGENTS: { name: string; id: string; bias: number }[] = [
+  { name: "Aley Rivera", id: "EMP-1042", bias: 0 },
+  { name: "Mohamed Hassan", id: "EMP-2087", bias: -3 },
+  { name: "Sara Al-Farsi", id: "EMP-3151", bias: 2 },
+  { name: "James O'Connor", id: "EMP-4220", bias: -6 },
+  { name: "Linh Tran", id: "EMP-5309", bias: 4 },
+];
+
+function buildSampleRows(): Record<string, unknown>[] {
   const today = new Date();
   const rows: Record<string, unknown>[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    const dateIso = d.toISOString().slice(0, 10);
-    const calls = 38 + Math.round(Math.sin(i) * 6) + 7;
-    rows.push({
-      Agent: "Aley Rivera",
-      Date: dateIso,
-      Calls: calls,
-      HandleTime: 200 * calls + i * 120, // total seconds across calls
-      FCR: 86 + (i % 3),
-      QAScore: 91 + (i % 3),
-      AdherenceMin: 380 + i * 4,
-      ScheduledMin: 420,
-      TNPS: 90 + (i % 4),
-      Rejected: Math.max(0, 4 - (i % 3)),
-      Tickets: 10 + (i % 4),
-    });
+  for (const agent of SAMPLE_AGENTS) {
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dateIso = d.toISOString().slice(0, 10);
+      const calls = 38 + Math.round(Math.sin(i + agent.bias) * 6) + 7;
+      rows.push({
+        "Employee ID": agent.id,
+        Agent: agent.name,
+        Date: dateIso,
+        Calls: calls,
+        HandleTime: (200 + agent.bias * 2) * calls + i * 120,
+        FCR: Math.max(60, 86 + agent.bias + (i % 3)),
+        QAScore: Math.max(60, 91 + agent.bias + (i % 3)),
+        AdherenceMin: 380 + i * 4 + agent.bias,
+        ScheduledMin: 420,
+        TNPS: Math.max(60, 90 + agent.bias + (i % 4)),
+        Rejected: Math.max(0, 4 - (i % 3) + Math.max(0, -agent.bias)),
+        Tickets: 10 + (i % 4),
+      });
+    }
   }
-  return computeDashboard(rows, 1);
+  return rows;
+}
+
+export function buildSampleDashboard(): DashboardData {
+  return computeDashboard(buildSampleRows(), 1);
+}
+
+export function buildSampleDataset(): ProcessedDataset {
+  return processWorkbookRows(buildSampleRows(), 1);
 }
