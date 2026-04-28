@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { computeDashboard, parseWorkbookFromArrayBuffer } from "@/lib/kpi-engine";
-import type { DashboardData } from "@/lib/kpi-types";
+import { processWorkbookRows, parseWorkbookFromArrayBuffer } from "@/lib/kpi-engine";
+import type { ProcessedDataset } from "@/lib/kpi-types";
 
 const FileSchema = z.object({
   name: z.string().min(1).max(255),
@@ -13,7 +13,6 @@ const InputSchema = z.object({
 });
 
 function base64ToArrayBuffer(b64: string): ArrayBuffer {
-  // Strip data url prefix if present
   const idx = b64.indexOf(",");
   const pure = idx >= 0 ? b64.slice(idx + 1) : b64;
   const binary = atob(pure);
@@ -25,7 +24,7 @@ function base64ToArrayBuffer(b64: string): ArrayBuffer {
 
 export const processDashboard = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => InputSchema.parse(input))
-  .handler(async ({ data }): Promise<DashboardData> => {
+  .handler(async ({ data }): Promise<ProcessedDataset> => {
     const allRows: Record<string, unknown>[] = [];
     for (const f of data.files) {
       try {
@@ -37,5 +36,5 @@ export const processDashboard = createServerFn({ method: "POST" })
         throw new Error(`Could not read "${f.name}". Make sure it is a valid .xlsx or .csv file.`);
       }
     }
-    return computeDashboard(allRows, data.files.length);
+    return processWorkbookRows(allRows, data.files.length);
   });
