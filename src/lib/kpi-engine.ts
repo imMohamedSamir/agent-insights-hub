@@ -118,10 +118,17 @@ function parseDate(v: unknown): string {
 function normalizeRow(raw: Record<string, unknown>): NormalizedRow | null {
   const agentCol = findColumn(raw, COLUMN_ALIASES.agent);
   const dateCol = findColumn(raw, COLUMN_ALIASES.date);
-  if (!agentCol && !dateCol) return null;
+  const idCol = findColumn(raw, COLUMN_ALIASES.employeeId);
+  if (!agentCol && !dateCol && !idCol) return null;
+
+  const agent = agentCol ? String(raw[agentCol] ?? "").trim() || "Unknown" : "Unknown";
+  const employeeId = idCol
+    ? String(raw[idCol] ?? "").trim()
+    : "";
 
   return {
-    agent: agentCol ? String(raw[agentCol] ?? "").trim() || "Unknown" : "Unknown",
+    agent,
+    employeeId: employeeId || `AG-${agent.replace(/\s+/g, "").slice(0, 8).toUpperCase()}`,
     date: dateCol ? parseDate(raw[dateCol]) : new Date().toISOString().slice(0, 10),
     calls: num(raw[findColumn(raw, COLUMN_ALIASES.calls) ?? ""]),
     handleTime: num(raw[findColumn(raw, COLUMN_ALIASES.handleTime) ?? ""]),
