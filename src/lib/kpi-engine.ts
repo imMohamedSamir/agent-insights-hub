@@ -381,9 +381,12 @@ export function computeDashboard(
   });
 
   // Agent summary
-  const agents = Array.from(new Set(rows.map((r) => r.agent)));
+  const agentNames = Array.from(new Set(rows.map((r) => r.agent)));
+  const employeeIds = Array.from(new Set(rows.map((r) => r.employeeId)));
+  const isAggregate = agentNames.length > 1;
   const summary: AgentSummary = {
-    name: agents[0] ?? "Aley Rivera",
+    name: isAggregate ? `All Agents (${agentNames.length})` : (agentNames[0] ?? "Aley Rivera"),
+    employeeId: isAggregate ? "ALL" : (employeeIds[0] ?? "—"),
     role: "TIER 2 SUPPORT",
     date: latest.date,
     overallScore: overall,
@@ -403,6 +406,62 @@ export function computeDashboard(
     experience,
     trend,
     insights,
+    rowsProcessed: rows.length,
+    filesProcessed,
+  };
+}
+
+/**
+ * Process raw rows into a full dataset: aggregate dashboard + per-agent dashboards
+ * + a flat list of agents (for searching).
+ */
+export function processWorkbookRows(
+  rawRows: Record<string, unknown>[],
+  filesProcessed: number
+): ProcessedDataset {
+  const rows = rawRows.map(normalizeRow).filter((r): r is NormalizedRow => r !== null);
+  if (rows.length === 0) {
+    throw new Error(
+      "No usable rows found. Expected columns: Agent, EmployeeId, Date, Calls, HandleTime, FCR, QAScore, AdherenceMin, ScheduledMin, TNPS, Rejected, Tickets."
+    );
+  }
+
+  const aggregate = computeDashboard(rawRows, filesProcessed);
+
+  // Group raw rows back by employeeId so per-agent dashboards reuse the same logic.
+  const groups = new Map<string, { name: string; rows: Record<string, unknown>[] }>();
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    const raw = rawRows[i];
+    const g = groups.get(r.employeeId) ?? { name: r.agent, rows: [] };
+    g.rows.push(raw);
+    groups.set(r.employeeId, g);
+  }
+
+  const byAgent: Record<string, DashboardData> = {};
+  const agents: AgentRecord[] = [];
+  for (const [employeeId, g] of groups) {
+    const dash = computeDashboard(g.rows, filesProcessed);
+    // Force the per-agent summary identity (computeDashboard infers from rows;
+    // safe to override with the canonical id/name we grouped by).
+    dash.summary.employeeId = employeeId;
+    dash.summary.name = g.name;
+    byAgent[employeeId] = dash;
+    agents.push({
+      employeeId,
+      name: g.name,
+      role: dash.summary.role,
+      overallScore: dash.summary.overallScore,
+      overallStatus: dash.summary.overallStatus,
+    });
+  }
+
+  agents.sort((a, b) => a.name.localeCompare(b.name));
+
+  return {
+    aggregate,
+    byAgent,
+    agents,
     rowsProcessed: rows.length,
     filesProcessed,
   };
