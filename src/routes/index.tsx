@@ -117,7 +117,7 @@ function OverviewPage() {
           </div>
 
           <div className="mt-8 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-5">
-            <PerformanceTrend data={data.trend} />
+            {/* <PerformanceTrend data={data.trend} /> */}
             <InsightsPanel insights={data.insights} />
           </div>
         </motion.div>
