@@ -45,6 +45,12 @@ export const Route = createRootRoute({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Score Card Tool — Workforce KPI Dashboard" },
+      { name: "description", content: "Agent Insights Hub is a web app for agents and supervisors to upload Excel data, calculate KPIs, and view animated performance dashboards." },
+      { property: "og:description", content: "Agent Insights Hub is a web app for agents and supervisors to upload Excel data, calculate KPIs, and view animated performance dashboards." },
+      { name: "twitter:description", content: "Agent Insights Hub is a web app for agents and supervisors to upload Excel data, calculate KPIs, and view animated performance dashboards." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8363118c-d267-416a-bfe6-705da1d4b9f6/id-preview-573a3f96--2991a3c3-5d8a-4d53-98c8-e3018c61e970.lovable.app-1777462793072.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8363118c-d267-416a-bfe6-705da1d4b9f6/id-preview-573a3f96--2991a3c3-5d8a-4d53-98c8-e3018c61e970.lovable.app-1777462793072.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
