@@ -61,6 +61,28 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(id);
   }, [searchTerm]);
 
+  // Auto-load embedded Excel data on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(embeddedXlsxUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const buf = await res.arrayBuffer();
+        const rows = parseWorkbookFromArrayBuffer(buf);
+        const result = processWorkbookRows(rows, 1);
+        if (cancelled) return;
+        setDatasetState(result);
+        setIsSample(false);
+      } catch (err) {
+        console.error("Failed to load embedded dataset:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const filteredAgents = useMemo(
     () => dataset.agents.filter((a) => matchesAgent(a, debouncedSearchTerm)),
     [dataset.agents, debouncedSearchTerm]
