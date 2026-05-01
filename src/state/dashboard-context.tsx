@@ -8,7 +8,12 @@ import {
   type ReactNode,
 } from "react";
 import type { AgentRecord, DashboardData, ProcessedDataset } from "@/lib/kpi-types";
-import { buildSampleDataset } from "@/lib/kpi-engine";
+import {
+  buildSampleDataset,
+  parseWorkbookFromArrayBuffer,
+  processWorkbookRows,
+} from "@/lib/kpi-engine";
+import embeddedXlsxUrl from "@/assets/embedded-data.xlsx?url";
 
 interface Ctx {
   /** Underlying processed dataset (aggregate + per-agent + agent list). */
