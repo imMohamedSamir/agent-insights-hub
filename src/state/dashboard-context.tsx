@@ -8,7 +8,12 @@ import {
   type ReactNode,
 } from "react";
 import type { AgentRecord, DashboardData, ProcessedDataset } from "@/lib/kpi-types";
-import { buildSampleDataset } from "@/lib/kpi-engine";
+import {
+  buildSampleDataset,
+  parseWorkbookFromArrayBuffer,
+  processWorkbookRows,
+} from "@/lib/kpi-engine";
+import embeddedXlsxUrl from "@/assets/embedded-data.xlsx?url";
 
 interface Ctx {
   /** Underlying processed dataset (aggregate + per-agent + agent list). */
@@ -55,6 +60,28 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     const id = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
     return () => clearTimeout(id);
   }, [searchTerm]);
+
+  // Auto-load embedded Excel data on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(embeddedXlsxUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const buf = await res.arrayBuffer();
+        const rows = parseWorkbookFromArrayBuffer(buf);
+        const result = processWorkbookRows(rows, 1);
+        if (cancelled) return;
+        setDatasetState(result);
+        setIsSample(false);
+      } catch (err) {
+        console.error("Failed to load embedded dataset:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filteredAgents = useMemo(
     () => dataset.agents.filter((a) => matchesAgent(a, debouncedSearchTerm)),
