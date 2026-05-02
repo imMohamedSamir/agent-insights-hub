@@ -39,7 +39,7 @@ function OverviewPage() {
       agentRole={summary.role}
       date={summary.date}
     >
-      {isSample && (
+      /* {isSample && (
         <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -56,7 +56,7 @@ function OverviewPage() {
             Upload Data
           </Link>
         </motion.div>
-      )}
+      )} */
 
       {selectedAgent && (
         <motion.div
